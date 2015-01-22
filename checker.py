@@ -10,9 +10,9 @@ import re
 import decorators
 import abc
 
-import BeautifulSoup
+import html_parser
 
-import sys
+
 
 class Config:
     """
@@ -106,38 +106,10 @@ class Data_Factory(Factory):
         self.__data = filter(lambda s: len(s) != 0, self.__data)
         
         self.__data = set(self.__data)
+        
         self.__normalised = True
    
-   
-from HTMLParser import HTMLParser
 
-class MLStripper(HTMLParser):
-    def __init__(self):
-        self.reset()
-        self.fed = []
-        self.containstags = False
-
-    def handle_starttag(self, tag, attrs):
-       self.containstags = True
-
-    def handle_data(self, d):
-        self.fed.append(d)
-
-    def has_tags(self):
-        return self.containstags
-
-    def get_data(self):
-        return ''.join(self.fed)
-
-def strip_tags(html):
-    must_filtered = True
-    while ( must_filtered ):
-        s = MLStripper()
-        s.feed(html)
-        html = s.get_data()
-        must_filtered = s.has_tags()
-    return html 
-    
 class Page_Factory(Factory):
     __pages = list()
     
@@ -169,7 +141,7 @@ class Page_Factory(Factory):
             # lower case
             html_text = html_text.lower()
             
-            stripped_page = strip_tags(html_text)
+            stripped_page = html_parser.strip_html_tags(html_text)
             # Strip html tags
             #p_regex_sub = functools.partial(re.sub, "<[^<]+?>", " ")
             #stripped_page = map(p_regex_sub, iter(html_lower))
@@ -222,8 +194,6 @@ def main():
     
     data_factory = Data_Factory()
     page_factory = Page_Factory()
-    #data = data_factory.data
-    #print data
     
     find_match(data_factory, page_factory)
 
