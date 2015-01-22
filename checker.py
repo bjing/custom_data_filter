@@ -4,200 +4,228 @@ __version__ = 0.1
 
 import os
 import itertools
+import functools
+import glob
 import re
 import decorators
+import abc
+
+import BeautifulSoup
+
+import sys
 
 class Config:
     """
     A singleton class that holds all the configuration.
     """
-    root = os.path.dirname(os.path.dirname(__file__)) 
+    root = os.path.dirname(__file__) 
     data_path = os.path.join(root, 'data')
-    data_file_ext = 'dat'
-    html_file_ext = 'html'
-    exclusion_file = os.path.join(data_path, 'exclusions.txt')
+    data_file_pattern = '*.dat'
+    html_file_pattern = '*.html'
+    
+    @classmethod
+    def show_config(cls):
+        """
+        Show config info
+        """
+        print "================================="
+        print "Root path: %s " % Config.root
+        print "Data path: %s " % Config.data_path
+        print "Data file pattern: %s " % Config.data_file_pattern
+        print "================================="
     
     
-def show_config():
-    """
-    Show config info
-    """
-    print "Root path: %s " % Config.root
-    print "Data path: %s " % Config.data_path
-    print "Exclusion_file: %s " % Config.exclusion_file
-    print "Data file extention: %s " % Config.data_file_ext
-        
+class Factory:
+    __metaclass__ = abc.ABCMeta
+    
+    @abc.abstractmethod
+    def data(self):
+        pass
 
-## TODO put these data retrieval functions in a factory
-def get_data():
+class Data_Factory(Factory):
     """
-    Get the corpus
-    
-    Corpus is stored in an iterator 
     """
-    def parse_file(file_):
-        """
-        Parse a data file and return a generator function of all the records 
-        A tuple contains tokens from a line
+    def __init__(self):
+        # __data is a list of strings
+        self.__data = None
+        self.__normalised = False
         
-        :param file_: the file
-        :type file_: file descriptor 
-        :returns: an iterator of the parsed data 
-        :rtype: iterator of tuples 
-        """
-        def parse_line(line):
-            """
-            Parse a single line of the corpus file
+    
+    @property
+    def data(self):
+        if self.__data is None:
+            self.__get_data_from_files()
             
-            :param line: a single line read from the corpus file
-            :type line: string
-            :returns: a list of tokens
-            :rtype: list
-            """
-            line = line.strip().lower()
-            if len(line) != 0:
-                try:
-                    # Lots of sites remove the extension from files, so dump ours if we need to
-                    line = re.sub("\..{3,5}$", "", line)
-                    # Remove leading and trailing brackets
-                    line = re.sub("\s*\[.+\]\s*-\s*", "", line)
-                    line = re.sub("\s*\[.+\]$", "", line)
-                    res = re.split("\s{3,}", line)
-                    if len(res) < 3:
-                        res = []
-                    else:
-                        res[2] = res[2].strip(' ')
-                        if len(res[2].strip(' ')) < 10:
-                            res = []
-                        else:
-                            res[2] = res[2].strip(' ').lstrip('.')
-                            #res[2] = res[2].decode("utf-8").encode('ascii', 'ignore')
-                            
-                        #print res
-                    return res
-                    
-                except IndexError as e:
-                    print "Error: {0} for line {1}".format(e, line)
+        if not self.__normalised:
+            self.__normalise_data()
         
-        return [parse_line(line) for line in file_]
-
-
-    # Get data file names by creating a filter and picking up file names that 
-    # end with Config.data_file_ext
-    data_files = filter(lambda f: f.endswith(Config.data_file_ext), 
-                        map(lambda f: os.path.join(Config.data_path, f), os.listdir(Config.data_path)))
-
-    # Open a file descriptor for each file and return an iterator of all file descriptors
-    fds = (open(data_file, 'r') for data_file in data_files)
-    # Parse each file and chain the iterator results together
-    data = map(parse_file, fds)
-    # Close file descriptors
-    for fd in fds:
-        fd.close()
+        return self.__data
+        
     
-    return [line for file_ in data for line in file_]
-
-def get_exclusions():
-    """
-    A generator function that gets all the re filters from the exclusions.txt file
-    
-    :returns: an iterator that has all the exclusion rules
-    :rtype: iterator
-    """
-    exclusions = []
-    with open(Config.exclusion_file, 'r') as fd:
-        for line in fd:
-            line = line.rstrip()
-            if line:
-                exclusions.append(line)
+    def __get_data_from_files(self):
+        """
+        Get the corpus data from files
+        
+        Corpus is stored in an iterator 
+        """
+        
+        def parse_data_file(file_):
+            with open(file_, 'r') as fd:
+                for line in fd:
+                    line = line.strip()
+                    if len(line):
+                        yield line 
                 
-    return exclusions
-
-def parse_pages(data, exclusions):
-    """
-    Parse all html pages, preparing them for matching against the corpus
+        # Get data file names  
+        data_filenames = glob.glob(os.path.join(Config.data_path,Config.data_file_pattern))
+        print "Data files: %s" % data_filenames
     
-    Here we define a series of decorators for parsing the html pages. The reason why I design it 
-    this way is that you can easily add or remove extra pre-processing steps by simply adding or
-    removing the decorators for function parse_page()  
-    """
+        # Parse each file
+        data_tmp = map(parse_data_file, data_filenames)
 
-    @decorators.handle_html_header
-    def parse_page(html_fd):
+        self.__data = [i.strip() for i in itertools.chain.from_iterable(data_tmp)]
+        
+    
+    def __normalise_data(self):
+        print "DEBUG: Normalising data"
+                    
+        # Change to all lower case
+        self.__data = [ s.lower() for s in self.__data ]
+        
+        # Remove leading []
+        self.__data = [ re.sub("^\s*\[.+\][^\w]\s*", "", s) for s in self.__data ]
+        
+        # Remove non-word chars
+        # Define a partial function so we can use the map() function, which only accepts one
+        # argument
+        p_regex_sub = functools.partial(re.sub, "[\W]", " ")
+        self.__data = map(p_regex_sub, iter(self.__data))
+        
+        # Remove leading and trailing spaces
+        self.__data = [ s.strip() if len(s.strip()) > 15 else '' for s in self.__data ]
+        self.__data = filter(lambda s: len(s) != 0, self.__data)
+        
+        self.__data = set(self.__data)
+        self.__normalised = True
+   
+   
+from HTMLParser import HTMLParser
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.fed = []
+        self.containstags = False
+
+    def handle_starttag(self, tag, attrs):
+       self.containstags = True
+
+    def handle_data(self, d):
+        self.fed.append(d)
+
+    def has_tags(self):
+        return self.containstags
+
+    def get_data(self):
+        return ''.join(self.fed)
+
+def strip_tags(html):
+    must_filtered = True
+    while ( must_filtered ):
+        s = MLStripper()
+        s.feed(html)
+        html = s.get_data()
+        must_filtered = s.has_tags()
+    return html 
+    
+class Page_Factory(Factory):
+    __pages = list()
+    
+    @property
+    def data(self):
+        if not self.__pages:
+            self.__load_pages()
+        
+        return self.__pages
+
+    def __load_pages(self):
         """
-        Parse an html page, removing all markups
-        Handle first two lines through the html_header decorator
+        Parse all html pages, preparing them for matching against the corpus
+        
+        Here we define a series of decorators for parsing the html pages. The reason why I design it 
+        this way is that you can easily add or remove extra pre-processing steps by simply adding or
+        removing the decorators for function parse_page()  
         """
-        stripped_page = re.sub('<[^<]+?>', '', ''.join(html_fd))
-        return stripped_page
-        
-    html_files = filter(lambda f: f.endswith(Config.html_file_ext), 
-                        map(lambda f: os.path.join(Config.data_path, f), os.listdir(Config.data_path)))
-
-    # Loop through all HTML files
-    for file_ in html_files:
-        # Read and parse page
-        print "Processing html file %s" % file_
-        with open(file_, 'r') as fd:
-            res = parse_page(fd)
-
-        # Hash match
-        for data_record in data:
-            
-            if not len(data_record):
-                continue
-            match = find_hash_match(data_record[2], data_record[1], exclusions, *res)
-            if match:
-                if res[1]:
-                    print "Looking at data record: %s" % data_record
-                    print "Found hash match of '{0}' on page {1}. Hash {2}".format(data_record[2], res[0], data_record[1])
-        
-        unique_names = set([i[2] for i in data if len(i) == 3 ])
-        # Name match
-        for name in unique_names:
-            
-            #print "Looking at data record: %s" % data_record
-            #print data_record
-            match = find_name_match(name, exclusions, *res)
-            
-            if match:
-                if res[1]:
-                    print "Looking at name record: %s" % name
-                    print "Found name match of '{0}' on page {1}".format(name, file_)#res[0])
-            #else:
-                #print "%s didn't match (and should not have)" % res[0]
-
-def find_hash_match(name, hash_, exclusions, source_url,should_match, html_page, stripped_page):
-    # Check hash
-    if hash_ in stripped_page:
-        #print "Hash match: %s" % hash_
-        return True
     
-#@decorators.ignore_exclusions
-def find_name_match(name, exclusions, source_url, should_match, html_page, stripped_page):
-    # make all lower case
-    stripped_page = stripped_page.lower()
-    html_page = html_page.lower()
+        @decorators.handle_html_header
+        def parse_page(file_name, html):
+            """
+            Parse an html page, removing all markups
+            Handle first two lines through the html_header decorator
+            """
+            
+            html_text = '\n'.join(html)
+            
+            # lower case
+            html_text = html_text.lower()
+            
+            stripped_page = strip_tags(html_text)
+            # Strip html tags
+            #p_regex_sub = functools.partial(re.sub, "<[^<]+?>", " ")
+            #stripped_page = map(p_regex_sub, iter(html_lower))
+            return stripped_page.split('\n')
+            
+
+        html_files = glob.glob(os.path.join(Config.data_path,Config.html_file_pattern))
+        print html_files
+        # Loop through all HTML files
+        for file_ in html_files:
+            # Read and parse page
+            print "Processing html file %s" % file_
+            with open(file_, 'r') as fd:
+                #page = Page(*parse_page(fd))
+                html = fd.readlines()
+                self.__pages.append(parse_page(file_, html))
+                
     
-    for exclusion in exclusions:
-        try:
-            result = re.match(exclusion, name)
-            return False
-        except Exception as e:
-            #print "Exclusion rule error: {0}:{1}".format(e, exclusion)
-            pass
+def find_match(data_factory, page_factory):
+    
+    #for data_record in data_factory.data:
+    #    print data_record
         
-    # After hash match, we don't need hash anymore, 
-    if name in html_page:
-        #print "Name match: %s" % name
-        return True
+    #for page in page_factory.data:
+    #    #print page['html_content']
+    #    print page['stripped_content']
+        
+    #return
+
+    pattern = ".{0,30}%s.{0,30}"
+    
+    for data_record in data_factory.data:
+        regex = re.compile(pattern % data_record)
+        for page in page_factory.data:
+            for line in page['stripped_content']:
+                if data_record in line:
+                    print "Matched Keyword: %s" % data_record
+                    print "Filename: %s" % page['file_name']
+                    
+                    if page['should_match']:
+                        
+                        m = regex.search(line)
+                        print "Context: %s\n" % m.group(0)
+                    else:
+                        print "False positive match"
+
 
 def main():
-    show_config()
-    data = get_data()
-    exclusions = get_exclusions()
+    Config.show_config()
     
-    parse_pages(data, exclusions)
+    data_factory = Data_Factory()
+    page_factory = Page_Factory()
+    #data = data_factory.data
+    #print data
+    
+    find_match(data_factory, page_factory)
 
 
 if __name__ == '__main__':

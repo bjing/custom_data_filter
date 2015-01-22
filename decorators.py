@@ -1,5 +1,7 @@
 import functools
 import re
+import os
+import copy
 
 """
 Decorators for HTML parsing
@@ -9,16 +11,23 @@ def handle_html_header(func):
     """
     A decorator that handles our special kind of html file, whcih has first two lines reserved
     """
-    def wrapper(html_fd):
+    def wrapper(file_name, html):
         """
         """
         # Get the header
-        source_url = html_fd.readline()
-        should_match = html_fd.readline()
+        source_url = html[0]
+        should_match = html[1]
         # Duplicate the file descriptor to return a list of all html raw content
-        dup_fd = html_fd
-        html_content = ''.join(dup_fd.readlines())
-        return (source_url, should_match, html_content, func(html_fd))
+        html_content = html[2:]
+        html_content = [ line.strip() if len(line.strip()) else '' for line in html_content ]
+        
+        res = {'source_url': source_url,
+               'file_name': file_name,
+               'should_match': should_match,
+               'html_content': html_content,
+               'stripped_content': func(file_name, html_content)
+               }
+        return res
     return wrapper
     
 def remove_leading_url(func):
