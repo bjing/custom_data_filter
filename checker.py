@@ -162,32 +162,49 @@ class Page_Factory(Factory):
     
 def find_match(data_factory, page_factory):
     
-    #for data_record in data_factory.data:
-    #    print data_record
+    def match_method_one(data_factory, page_factory):
+        """
+        Forever
+        """
+        pattern = ".{0,30}%s.{0,30}"
         
-    #for page in page_factory.data:
-    #    #print page['html_content']
-    #    print page['stripped_content']
-        
-    #return
-
-    pattern = ".{0,30}%s.{0,30}"
-    
-    for data_record in data_factory.data:
-        regex = re.compile(pattern % data_record)
-        for page in page_factory.data:
-            for line in page['stripped_content']:
-                if data_record in line:
-                    print "Matched Keyword: %s" % data_record
-                    print "Filename: %s" % page['file_name']
-                    
+        for data_record in data_factory.data:
+            regex = re.compile(pattern % data_record)
+            for page in page_factory.data:        
+                html_text = '\n'.join(page['stripped_content'])
+                results = regex.findall(html_text)
+                
+                for result in results:
                     if page['should_match']:
-                        
-                        m = regex.search(line)
-                        print "Context: %s\n" % m.group(0)
+                            print "Matched Keyword: %s" % data_record
+                            print "Filename: %s" % page['file_name']
+                            print "Context: %s\n" % result
                     else:
                         print "False positive match"
-
+            
+            
+    def match_method_two(data_factory, page_factory):
+        """
+        real    0m16.906s
+        user    0m16.784s
+        sys    0m0.106s
+        """
+        pattern = ".{0,30}%s.{0,30}"
+        
+        for data_record in data_factory.data:
+            regex = re.compile(pattern % data_record)
+            for page in page_factory.data:                  
+                for line in page['stripped_content']:
+                    if data_record in line:
+                        if page['should_match']:
+                            print "Matched Keyword: %s" % data_record
+                            print "Filename: %s" % page['file_name']
+                            m = regex.search(line)
+                            print "Context: %s\n" % m.group(0)
+                        else:
+                            print "False positive match"
+                
+    match_method_two(data_factory, page_factory)
 
 def main():
     Config.show_config()
@@ -196,7 +213,6 @@ def main():
     page_factory = Page_Factory()
     
     find_match(data_factory, page_factory)
-
 
 if __name__ == '__main__':
     main()
