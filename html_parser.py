@@ -1,5 +1,9 @@
 from HTMLParser import HTMLParser
 
+"""
+    Borrowed code from the internet for stripping HTML markups
+"""
+
 class MLStripper(HTMLParser):
     def __init__(self):
         self.reset()
