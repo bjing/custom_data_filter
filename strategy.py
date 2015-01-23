@@ -17,17 +17,33 @@ import re
 """
 
 class Strategy:
+    """
+    The strategy class provides a unified interface for starting the matching
+    process depending on what matching method the user chooses 
+    
+    It is probably a bit of an overkill in this case. But for program of 
+    larger size this would make things more manageable.
+    """
     
     def __init__(self, match_method):
         self.__match_method = match_method
         
     def find_match(self, data_factory, page_factory):
+        """
+        This is the method for starting the match process
+        
+        Depending on how __match_method is initialised, different match
+        methods can be executed here
+        """
         self.__match_method(data_factory, page_factory)
         
        
 def mass_page_match(data_factory, page_factory):
     """
-    Forever
+    This method treats each stripped html page as a big string and searches 
+    for the data we want to match
+    
+    This takes forever, never bothered to wait until it finishes
     """
     pattern = ".{0,30}%s.{0,30}"
     
@@ -51,6 +67,8 @@ def baseline_match(data_factory, page_factory):
     real    0m16.906s
     user    0m16.784s
     sys    0m0.106s
+    
+    The above times are from machine with i7 930 with 6G RAM at 1066MHz
     """
     pattern = ".{0,30}%s.{0,30}"
     

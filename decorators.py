@@ -1,15 +1,13 @@
 import functools
 import re
-import os
-import copy
 
 """
-Decorators for HTML parsing
+Decorators for data parsing and processing
 """
-
 def handle_html_header(func):
     """
-    A decorator that handles our special kind of html file, whcih has first two lines reserved
+    A decorator that handles our special kind of html file, 
+    which has first two lines reserved
     """
     def wrapper(file_name, html):
         """
@@ -17,8 +15,9 @@ def handle_html_header(func):
         # Get the header
         source_url = html[0]
         should_match = html[1]
-        # Duplicate the file descriptor to return a list of all html raw content
+        # Get the raw html strings
         html_content = html[2:]
+        # Striping out empty lines in raw html
         html_content = [ line.strip() if len(line.strip()) else '' for line in html_content ]
         
         res = {'source_url': source_url,
@@ -30,8 +29,11 @@ def handle_html_header(func):
         return res
     return wrapper
     
+    
 def remove_leading_url(func):
     """
+    DEPRECATED PLEASE IGNORE!
+    
     A decorator that removes the leading url on each html line
     """
     def wrapper(html_fd):
@@ -43,23 +45,3 @@ def remove_leading_url(func):
         return func(html_fd_list)
     return wrapper
 
-def normalise(func):
-    """
-    A decorator that removes the leading url on each html line
-    """
-    def wrapper(html_fd):
-        return func(html_fd)
-    return wrapper
-
-"""
-Decorators for term matching
-"""
-
-def ignore_exclusions(func):
-    """
-    TODO We shouldn't match any terms that are on exclusion list
-    """
-    @functools.wraps
-    def wrapper(html_fd):
-        return func()
-    return wrapper
