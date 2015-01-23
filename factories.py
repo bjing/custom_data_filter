@@ -8,6 +8,7 @@ import itertools
 import decorators
 import html_parser
 from config import Config
+import utils
 
 """
     We define "factory" methods to generate the input data we need for matching
@@ -19,7 +20,7 @@ from config import Config
 class Base_Factory:
     """
     Base factory class that enforces the interface Class.data.
-    """
+    """    
     __metaclass__ = abc.ABCMeta
     
     @abc.abstractmethod
@@ -38,6 +39,8 @@ class Data_Factory(Base_Factory):
         # __data is an iterator of strings
         self.__data = None
         self.__normalised = False
+        
+        self.logger = utils.get_logger(__name__)
         
     @property
     def data(self):
@@ -77,7 +80,7 @@ class Data_Factory(Base_Factory):
                 
         # Get data file names  
         data_filenames = glob.glob(os.path.join(Config.data_path,Config.data_file_pattern))
-        print "Data files: %s" % data_filenames
+        self.logger.debug("Data files: %s" % data_filenames)
     
         # Parse each file
         data_tmp = map(parse_data_file, iter(data_filenames))
@@ -87,7 +90,7 @@ class Data_Factory(Base_Factory):
         self.__data = itertools.chain.from_iterable(data_tmp)
         
     def __normalise_data(self):
-        print "DEBUG: Normalising data"
+        self.logger.info("Normalising corpus data")
                     
         # Change to all lower case
         self.__data = (s.lower() for s in self.__data)
@@ -96,9 +99,9 @@ class Data_Factory(Base_Factory):
         self.__data = (re.sub("^\s*\[.+\][^\w]\s*", "", s) for s in self.__data)
         
         # Remove non-word chars
-        # Define a partial function so we can use the map() function, which only accepts one
-        # argument
-        p_regex_sub = functools.partial(re.sub, "[\W]", " ")
+        # Define a partial function so we can use the map() function, which 
+        # only accepts one argument
+        p_regex_sub = functools.partial(re.sub, "[\W]+", " ")
         self.__data = map(p_regex_sub, self.__data)
         
         # Remove leading and trailing spaces
@@ -123,6 +126,9 @@ class Page_Factory(Base_Factory):
     
     # __pages is a list of dictionaries
     __pages = list()
+    
+    def __init__(self):
+        self.logger = utils.get_logger(__name__)
     
     @property
     def data(self):
@@ -157,16 +163,18 @@ class Page_Factory(Base_Factory):
             # The regex way of stripping off markups
             #p_regex_sub = functools.partial(re.sub, "<[^<]+?>", " ")
             #stripped_page = map(p_regex_sub, iter(html_lower))
+            
+            # Remove all non-word characters
+            stripped_page = re.sub("[\W]+", " ", stripped_page)
             return stripped_page.split('\n')
             
         # Process all html files
         html_files = glob.glob(os.path.join(Config.data_path,Config.html_file_pattern))
-        print html_files
         
         # Loop through all HTML files
         for file_ in html_files:
             # Read and parse page
-            print "Processing html file %s" % file_
+            self.logger.info("Processing html file %s" % file_)
             with open(file_, 'r') as fd:
                 html = fd.readlines()
                 self.__pages.append(parse_html_page(file_, html))

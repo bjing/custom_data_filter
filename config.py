@@ -1,4 +1,5 @@
 import os
+import logging
 
 class Config:
     """
@@ -11,6 +12,7 @@ class Config:
     data_path = os.path.join(root, 'data')
     data_file_pattern = '*.dat'
     html_file_pattern = '*.html'
+    default_logging_level = logging.DEBUG
     
     @classmethod
     def show_config(cls):
@@ -18,10 +20,11 @@ class Config:
         Show config info
         """
         print "================================="
+        print "Configuration:\n"
         print "Root path: %s " % Config.root
         print "Data path: %s " % Config.data_path
         print "Data file pattern: %s " % Config.data_file_pattern
-        print "================================="
+        print "=================================\n"
     
     
  

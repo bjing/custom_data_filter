@@ -1,4 +1,5 @@
 import re
+import utils
 
 """
     This strategy pattern is mainly written for me to test different matching
@@ -28,6 +29,8 @@ class Strategy:
     def __init__(self, match_method):
         self.__match_method = match_method
         
+        self.__logger = utils.get_logger(__name__)
+        
     def find_match(self, data_factory, page_factory):
         """
         This is the method for starting the match process
@@ -35,16 +38,17 @@ class Strategy:
         Depending on how __match_method is initialised, different match
         methods can be executed here
         """
-        self.__match_method(data_factory, page_factory)
+        self.__match_method(data_factory, page_factory, self.__logger)
         
        
-def mass_page_match(data_factory, page_factory):
+def mass_page_match(data_factory, page_factory, logger):
     """
     This method treats each stripped html page as a big string and searches 
     for the data we want to match
     
     This takes forever, never bothered to wait until it finishes
-    """
+    """    
+    
     pattern = ".{0,30}%s.{0,30}"
     
     for data_record in data_factory.data:
@@ -55,14 +59,14 @@ def mass_page_match(data_factory, page_factory):
             
             for result in results:
                 if page['should_match']:
-                        print "Matched Keyword: %s" % data_record
-                        print "Filename: %s" % page['file_name']
-                        print "Context: %s\n" % result
+                        logger.info("Matched Keyword: %s" % data_record)
+                        logger.info("Filename: %s" % page['file_name'])
+                        logger.info("Context: %s\n" % result)
                 else:
                     print "False positive match"
         
         
-def baseline_match(data_factory, page_factory):
+def baseline_match(data_factory, page_factory, logger):
     """
     real    0m16.906s
     user    0m16.784s
@@ -70,6 +74,7 @@ def baseline_match(data_factory, page_factory):
     
     The above times are from machine with i7 930 with 6G RAM at 1066MHz
     """
+    
     pattern = ".{0,30}%s.{0,30}"
     
     for data_record in data_factory.data:
@@ -78,10 +83,10 @@ def baseline_match(data_factory, page_factory):
             for line in page['stripped_content']:
                 if data_record in line:
                     if page['should_match']:
-                        print "Matched Keyword: %s" % data_record
-                        print "Filename: %s" % page['file_name']
+                        logger.info("Matched Keyword: %s" % data_record)
+                        logger.info("Filename: %s" % page['file_name'])
                         m = regex.search(line)
-                        print "Context: %s\n" % m.group(0)
+                        logger.info("Context: %s\n" % m.group(0))
                     else:
                         print "False positive match"
             

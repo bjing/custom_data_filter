@@ -11,7 +11,7 @@ class MLStripper(HTMLParser):
         self.containstags = False
 
     def handle_starttag(self, tag, attrs):
-       self.containstags = True
+        self.containstags = True
 
     def handle_data(self, d):
         self.fed.append(d)
@@ -30,11 +30,3 @@ def strip_html_tags(html):
         html = s.get_data()
         must_filtered = s.has_tags()
     return html 
-
-if __name__ == "__main__":
-    with open('data/got1.html', 'r') as fd:
-        html = '\n'.join(fd.readlines())
-        
-    stripped = strip_html_tags(html)
-    with open('/tmp/got1.txt', 'w') as fd:
-        fd.write(stripped)

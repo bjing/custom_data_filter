@@ -11,15 +11,29 @@ def handle_html_header(func):
     """
     def wrapper(file_name, html):
         """
-        """
-        # Get the header
-        source_url = html[0]
-        should_match = html[1]
-        # Get the raw html strings
-        html_content = html[2:]
-        # Striping out empty lines in raw html
-        html_content = [ line.strip() if len(line.strip()) else '' for line in html_content ]
+        The wrapper function that handles the html header
         
+        :param file_name: the htm file name
+        :type file_name: string
+        :param html: the html raw text as a list of strings with each line being
+            a string item in the list
+        :type html: list of str
+        
+        :returns: resource about the html that will be useful during string 
+            matching process
+        :rtype: dict
+        """
+        try:
+            # Get the header
+            source_url = html[0]
+            should_match = html[1]
+            # Get the raw html strings
+            html_content = html[2:]
+            # Striping out empty lines in raw html
+            html_content = [ line.strip() if len(line.strip()) else '' for line in html_content ]
+        except IndexError as e:
+            print "Error accesing html page string: %s" % e
+            
         res = {'source_url': source_url,
                'file_name': file_name,
                'should_match': should_match,
