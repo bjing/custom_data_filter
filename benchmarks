@@ -1,0 +1,92 @@
+######################
+System specification:
+
+Intel i7 930 2.8GHz
+6G 1066MHz RAM
+SSD from eons ago - pretty bad read/write speed in today's standards
+Linux Mint 17 64-bit
+3.13.0-24-generic
+######################
+---------------
+Perl Baseline:
+--------------
+#1
+real    0m20.961s
+user    0m20.650s
+sys 0m0.289s
+
+#2
+real    0m19.769s
+user    0m19.614s
+sys 0m0.145s
+
+#3
+real    0m19.815s
+user    0m19.652s
+sys 0m0.154s
+
+-------------------
+My Python baseline:
+--------------------
+#1
+real    0m16.451s
+user    0m16.381s
+sys 0m0.036s
+
+#2
+real    0m17.046s
+user    0m16.994s
+sys 0m0.036s
+
+#3
+real    0m16.689s
+user    0m16.642s
+sys 0m0.032s
+
+-----------------
+pypy on top of my baseline
+-----------------
+#1
+real    0m15.142s
+user    0m15.069s
+sys 0m0.058s
+
+#2
+real    0m15.186s
+user    0m15.113s
+sys 0m0.059s
+
+
+#3
+real    0m15.467s
+user    0m15.387s
+sys 0m0.064s
+
+
+------------------
+Further cleansing of html text removing non-word character (already removed in corpus data)
+in order to treat non-word characters in keywords as wildcards
+
+WITHOUT pypy
+Reduced performance with pypy in this case (not sure why, numbers not included)
+------------------
+#1
+real	0m13.801s
+user	0m13.746s
+sys	0m0.041s
+
+#2
+real	0m13.480s
+user	0m13.426s
+sys	0m0.041s
+
+#3
+real	0m13.191s
+user	0m13.144s
+sys	0m0.036s
+
+#4
+real	0m13.297s
+user	0m13.238s
+sys	0m0.048s
+
