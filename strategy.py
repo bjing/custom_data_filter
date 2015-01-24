@@ -63,18 +63,14 @@ def mass_page_match(data_factory, page_factory, logger):
                         logger.info("Filename: %s" % page['file_name'])
                         logger.info("Context: %s\n" % result)
                 else:
-                    print "False positive match"
+                    logger.warn("False positive match")
         
         
 def baseline_match(data_factory, page_factory, logger):
     """
-    real    0m16.906s
-    user    0m16.784s
-    sys    0m0.106s
-    
-    The above times are from machine with i7 930 with 6G RAM at 1066MHz
+    My baseline, looping through keywords in outter loop, and looping through pages in inner loop.
+    Within the inner loop, we loop through every line of each html file to do the matching
     """
-    
     pattern = ".{0,30}%s.{0,30}"
     
     for data_record in data_factory.data:
@@ -88,5 +84,5 @@ def baseline_match(data_factory, page_factory, logger):
                         m = regex.search(line)
                         logger.info("Context: %s\n" % m.group(0))
                     else:
-                        print "False positive match"
+                        logger.warn("False positive match")
             
