@@ -90,16 +90,20 @@ def baseline_match(data_factory, page_factory, logger):
 
 def magic_speedy_match(data_factory, page_factory, logger):
     """
-    My baseline, looping through keywords in outter loop, and looping through pages in inner loop.
-    Within the inner loop, we loop through every line of each html file to do the matching
+    This is THE match method that reduces corpus string matching against HTML file from ~8 seconds 
+    to under 1 second. (on my stock i7 930)
+    
+    Read find_string_with_context() for methodology 
     """
-    def find_string_speedy(regex, string, context_length):
+    def find_string_with_context(regex, string, context_length):
         """
-        This is where all the magic come from! 
+        This is where all the magic comes from! 
         
-        The idea is to avoid context matching in regex
-        We search for the exact corpus string, then do manually context retrieval using string
-        indexes
+        The idea is to avoid context matching using regex. Back tracking introduces a lot of 
+        computation overhead
+        
+        Instead we search for the exact corpus string using regex, then do manually context 
+        retrieval using string indexes
         """
         m = regex.search(string)
         if m:
@@ -127,7 +131,7 @@ def magic_speedy_match(data_factory, page_factory, logger):
                     logger.info("Matched Keyword: %s" % data_record)
                     logger.info("Filename: %s" % page['file_name'])
                     
-                    res = find_string_speedy(regex, line, context_length)
+                    res = find_string_with_context(regex, line, context_length)
                     if res:
                         logger.info("Context: %s\n" % res)             
             
