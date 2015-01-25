@@ -72,17 +72,17 @@ def baseline_match(data_factory, page_factory, logger):
     Within the inner loop, we loop through every line of each html file to do the matching
     """
     pattern = ".{0,30}%s.{0,30}"
-    
+
+    matches = 0
     for data_record in data_factory.data:
         regex = re.compile(pattern % data_record)
-        for page in page_factory.data:                  
+        for page in page_factory.data:
             for line in page['stripped_content']:
-                if data_record in line:
-                    if page['should_match']:
-                        logger.info("Matched Keyword: %s" % data_record)
-                        logger.info("Filename: %s" % page['file_name'])
-                        m = regex.search(line)
-                        logger.info("Context: %s\n" % m.group(0))
-                    else:
-                        logger.warn("False positive match")
+                if data_record in line and page['should_match']:
+                    matches += 1
+                    logger.info("Matched Keyword: %s" % data_record)
+                    logger.info("Filename: %s" % page['file_name'])
+                    m = regex.search(line)
+                    logger.info("Context: %s\n" % m.group(0))                     
             
+    logger.info("Total Matches: %s" % matches)

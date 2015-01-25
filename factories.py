@@ -92,32 +92,33 @@ class Data_Factory(Base_Factory):
     def __normalise_data(self):
         self.logger.info("Normalising corpus data")
                     
-        # Change to all lower case
-        self.__data = (s.lower() for s in self.__data)
-        
         # Remove leading []
         self.__data = (re.sub("^\s*\[.+\][^\w]\s*", "", s) for s in self.__data)
         
         # Remove non-word chars
         # Define a partial function so we can use the map() function, which 
         # only accepts one argument
-        p_regex_sub = functools.partial(re.sub, "[\W]+", " ")
+        p_regex_sub = functools.partial(re.sub, "[^a-zA-Z0-9]", " ")
         self.__data = map(p_regex_sub, self.__data)
         
-        # Remove leading and trailing spaces
-        self.__data = (s.strip() if len(s.strip()) > 15 else '' for s in self.__data)
+        # Change to all lower case and strip chars at both ends of lines
+        self.__data = (s.strip().lower() for s in self.__data)
         
-        # Throw away empty lines
-        self.__data = filter(lambda s: len(s) != 0, self.__data)
+        # Remove extra spaces
+        p_regex_sub = functools.partial(re.sub, "\s+", " ")
+        self.__data = map(p_regex_sub, self.__data)
+        
+        # Keep keywords that are over 15 character long
+        self.__data = set(filter(lambda s: len(s) > 15, self.__data))
         
         # De-duplicate the corpus data using a set
         # Then convert it back to an iterator
-        self.__data = iter(set(self.__data))
+        #self.__data = set(self.__data)
         
         # Flag that the corpus data has been normalised
         self.__normalised = True
         
-    def dump_data_to_file(self, path):
+    def dump_to_disk(self, path):
         filename = os.path.join(Config.root, path)
         filename = os.path.join(filename, 'processed.dat')
         self.logger.info("Dumping processed corpus data to file %s" % filename)
@@ -143,7 +144,7 @@ class Page_Factory(Base_Factory):
         
         return self.__pages
 
-    def dump_stripped_to_file(self, path):
+    def dump_to_disk(self, path):
         """
         Dump stripped html data to file for debugging purpose
         """
@@ -178,24 +179,23 @@ class Page_Factory(Base_Factory):
             :rtype: list of str
             """
             
-            html_text = '\n'.join(html)
-                        
+            # Filter out empty lines
+            html = filter(lambda line: len(line.strip()), html)
+            
             # Strip all HTML markups
+            html_text = '\n'.join(html)
             stripped_page = html_parser.strip_html_tags(html_text)
+            stripped_page = stripped_page.split('\n')
             
-            # lower case
-            stripped_page = stripped_page.lower()
-            
-            # Remove all non-word characters. Since removing non-word characters will remove
-            # \n, we apply this to each line instead of the whole html text
-            stripped_page = stripped_page.split('\n') 
-            p_regex_sub = functools.partial(re.sub, "[\W]+", " ")
+            # Remove non-word characters
+            p_regex_sub = functools.partial(re.sub, "[^a-zA-Z0-9]", " ")
             stripped_page = map(p_regex_sub, stripped_page)
             
-            # Remove leading and trailing spaces for each line
-            stripped_page = [line.strip() for line in stripped_page]
+            # Change to lower case, also remove extra spaces
+            stripped_page = [re.sub("\s+", " ", line.strip().lower()) for line in stripped_page]
+            
             # Filter out empty lines
-            stripped_page = filter(lambda line: len(line) != 0, stripped_page)
+            stripped_page = filter(lambda line: len(line), stripped_page)
             
             return stripped_page
             
