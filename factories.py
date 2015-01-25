@@ -116,8 +116,14 @@ class Data_Factory(Base_Factory):
         
         # Flag that the corpus data has been normalised
         self.__normalised = True
+        
+    def dump_data_to_file(self, path):
+        filename = os.path.join(Config.root, path)
+        filename = os.path.join(filename, 'processed.dat')
+        self.logger.info("Dumping processed corpus data to file %s" % filename)
+        with open(filename, 'w') as fd:
+            fd.write('\n'.join(self.data))
    
-
 class Page_Factory(Base_Factory):
     """
     A page factory that produces pages to match against
@@ -137,6 +143,17 @@ class Page_Factory(Base_Factory):
         
         return self.__pages
 
+    def dump_stripped_to_file(self, path):
+        """
+        Dump stripped html data to file for debugging purpose
+        """
+        for page in self.data:
+            filename = os.path.join(Config.root, path)
+            filename = os.path.join(filename, os.path.basename(page['file_name']))
+            self.logger.info("Creating stripped file for %s" % page['file_name'])
+            with open(filename, 'w') as fd:
+                fd.write('\n'.join(page['stripped_content']))
+
     def __load_pages(self):
         """
         Parse all pages, preparing them for matching against the corpus
@@ -151,22 +168,36 @@ class Page_Factory(Base_Factory):
             """
             Parse an html page, removing all markups
             Handle first two special lines through the html_header decorator
+            
+            :param file_name: name of the html file
+            :type file_name: str
+            :param html: raw html content
+            :type html: list of str
+            
+            :returns: html content with markups stripped
+            :rtype: list of str
             """
             
             html_text = '\n'.join(html)
-     
-            # lower case
-            html_text = html_text.lower()
-            
+                        
             # Strip all HTML markups
             stripped_page = html_parser.strip_html_tags(html_text)
-            # The regex way of stripping off markups
-            #p_regex_sub = functools.partial(re.sub, "<[^<]+?>", " ")
-            #stripped_page = map(p_regex_sub, iter(html_lower))
             
-            # Remove all non-word characters
-            stripped_page = re.sub("[\W]+", " ", stripped_page)
-            return stripped_page.split('\n')
+            # lower case
+            stripped_page = stripped_page.lower()
+            
+            # Remove all non-word characters. Since removing non-word characters will remove
+            # \n, we apply this to each line instead of the whole html text
+            stripped_page = stripped_page.split('\n') 
+            p_regex_sub = functools.partial(re.sub, "[\W]+", " ")
+            stripped_page = map(p_regex_sub, stripped_page)
+            
+            # Remove leading and trailing spaces for each line
+            stripped_page = [line.strip() for line in stripped_page]
+            # Filter out empty lines
+            stripped_page = filter(lambda line: len(line) != 0, stripped_page)
+            
+            return stripped_page
             
         # Process all html files
         html_files = glob.glob(os.path.join(Config.data_path,Config.html_file_pattern))

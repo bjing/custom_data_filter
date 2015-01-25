@@ -30,7 +30,6 @@ def handle_html_header(func):
             # Get the raw html strings
             html_content = html[2:]
             # Striping out empty lines in raw html
-            html_content = [ line.strip() if len(line.strip()) else '' for line in html_content ]
         except IndexError as e:
             print "Error accesing html page string: %s" % e
             
