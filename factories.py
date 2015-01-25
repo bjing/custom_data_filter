@@ -93,27 +93,24 @@ class Data_Factory(Base_Factory):
         self.logger.info("Normalising corpus data")
                     
         # Remove leading []
-        self.__data = (re.sub("^\s*\[.+\][^\w]\s*", "", s) for s in self.__data)
+        self.__data = map(functools.partial(re.sub, "^\s*\[.+\][^\w]\s*", ""), self.__data)
         
         # Remove non-word chars
         # Define a partial function so we can use the map() function, which 
         # only accepts one argument
-        p_regex_sub = functools.partial(re.sub, "[^a-zA-Z0-9]", " ")
-        self.__data = map(p_regex_sub, self.__data)
+        self.__data = map(functools.partial(re.sub, "[^a-zA-Z0-9]", " "), self.__data)
         
         # Change to all lower case and strip chars at both ends of lines
-        self.__data = (s.strip().lower() for s in self.__data)
+        strip = str.strip
+        lower = str.lower
+        self.__data = map(lambda s: lower(strip(s)), self.__data)
+        #self.__data = (s.strip().lower() for s in self.__data)
         
         # Remove extra spaces
-        p_regex_sub = functools.partial(re.sub, "\s+", " ")
-        self.__data = map(p_regex_sub, self.__data)
+        self.__data = map(functools.partial(re.sub, "\s+", " "), self.__data)
         
-        # Keep keywords that are over 15 character long
+        # Keep keywords that are over 15 character long, and change it to a set
         self.__data = set(filter(lambda s: len(s) > 15, self.__data))
-        
-        # De-duplicate the corpus data using a set
-        # Then convert it back to an iterator
-        #self.__data = set(self.__data)
         
         # Flag that the corpus data has been normalised
         self.__normalised = True
@@ -188,11 +185,16 @@ class Page_Factory(Base_Factory):
             stripped_page = stripped_page.split('\n')
             
             # Remove non-word characters
-            p_regex_sub = functools.partial(re.sub, "[^a-zA-Z0-9]", " ")
-            stripped_page = map(p_regex_sub, stripped_page)
+            stripped_page = map(functools.partial(re.sub, "[^a-zA-Z0-9]", " "), stripped_page)
             
-            # Change to lower case, also remove extra spaces
-            stripped_page = [re.sub("\s+", " ", line.strip().lower()) for line in stripped_page]
+            # Predefine functions so they don't get evaluated over and over in map or loop
+            strip = str.strip
+            lower = str.lower
+            # Strip line and convert to lower case
+            stripped_page = map(lambda s: lower(strip(s)), stripped_page)
+            
+            # Remove extra spaces
+            stripped_page = map(functools.partial(re.sub, "\s+", " "), stripped_page)
             
             # Filter out empty lines
             stripped_page = filter(lambda line: len(line), stripped_page)

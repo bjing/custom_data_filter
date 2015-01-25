@@ -64,8 +64,8 @@ def mass_page_match(data_factory, page_factory, logger):
                         logger.info("Context: %s\n" % result)
                 else:
                     logger.warn("False positive match")
-        
-        
+    
+    
 def baseline_match(data_factory, page_factory, logger):
     """
     My baseline, looping through keywords in outter loop, and looping through pages in inner loop.
@@ -86,3 +86,50 @@ def baseline_match(data_factory, page_factory, logger):
                     logger.info("Context: %s\n" % m.group(0))                     
             
     logger.info("Total Matches: %s" % matches)
+     
+
+def magic_speedy_match(data_factory, page_factory, logger):
+    """
+    My baseline, looping through keywords in outter loop, and looping through pages in inner loop.
+    Within the inner loop, we loop through every line of each html file to do the matching
+    """
+    def find_string_speedy(regex, string, context_length):
+        """
+        This is where all the magic come from! 
+        
+        The idea is to avoid context matching in regex
+        We search for the exact corpus string, then do manually context retrieval using string
+        indexes
+        """
+        m = regex.search(string)
+        if m:
+            # Get index of string in html text line 
+            (start, end) = m.span()
+            # Calculate start & end indexes for including context
+            start = start - context_length if start > context_length else 0
+            end = end + context_length if len(string) - context_length > end else len(string)
+            
+            return string[start:end]
+        else:
+            return None
+    
+    #pattern = ".{0,30}%s.{0,30}"
+    pattern = "%s"
+    context_length = 30
+
+    matches = 0
+    for data_record in data_factory.data:
+        regex = re.compile(pattern % data_record)
+        for page in page_factory.data:
+            for line in page['stripped_content']:
+                if data_record in line and page['should_match']:
+                    matches += 1
+                    logger.info("Matched Keyword: %s" % data_record)
+                    logger.info("Filename: %s" % page['file_name'])
+                    
+                    res = find_string_speedy(regex, line, context_length)
+                    if res:
+                        logger.info("Context: %s\n" % res)             
+            
+    logger.info("Total Matches: %s" % matches)
+    
