@@ -20,12 +20,12 @@ def main():
 #     page_factory.dump_to_disk('stripped_html')
      
     # Now we can use different strategies to find matches    
-    #baseline_strategy = Strategy(baseline_match)
-    #baseline_strategy.find_match(data_factory, page_factory)
+    baseline = Strategy(baseline_match)
+    baseline.find_match(data_factory, page_factory)
     
     # Now we can use different strategies to find matches    
-    speedy_match = Strategy(magic_speedy_match)
-    speedy_match.find_match(data_factory, page_factory)
+    #speedy = Strategy(magic_speedy_match)
+    #speedy.find_match(data_factory, page_factory)
 
 
 if __name__ == '__main__':

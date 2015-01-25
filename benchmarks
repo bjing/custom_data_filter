@@ -29,64 +29,34 @@ sys 0m0.154s
 My Python baseline:
 --------------------
 #1
-real    0m16.451s
-user    0m16.381s
-sys 0m0.036s
+real	0m15.601s
+user	0m15.537s
+sys	0m0.047s
 
 #2
-real    0m17.046s
-user    0m16.994s
-sys 0m0.036s
+real	0m15.736s
+user	0m15.543s
+sys	0m0.167s
 
 #3
-real    0m16.689s
-user    0m16.642s
-sys 0m0.032s
+real	0m15.683s
+user	0m15.598s
+sys	0m0.068s
 
------------------
-pypy on top of my baseline
------------------
+----------------
+Magic speedy match
+----------------
 #1
-real    0m15.142s
-user    0m15.069s
-sys 0m0.058s
+real	0m8.565s
+user	0m8.441s
+sys	0m0.104s
 
 #2
-real    0m15.186s
-user    0m15.113s
-sys 0m0.059s
-
-
-#3
-real    0m15.467s
-user    0m15.387s
-sys 0m0.064s
-
-
-------------------
-Further cleansing of html text removing non-word character (already removed in corpus data)
-in order to treat non-word characters in keywords as wildcards
-
-WITHOUT pypy
-Reduced performance with pypy in this case (not sure why, numbers not included)
-------------------
-#1
-real	0m13.801s
-user	0m13.746s
-sys	0m0.041s
-
-#2
-real	0m13.480s
-user	0m13.426s
-sys	0m0.041s
+real	0m8.534s
+user	0m8.480s
+sys	0m0.040s
 
 #3
-real	0m13.191s
-user	0m13.144s
-sys	0m0.036s
-
-#4
-real	0m13.297s
-user	0m13.238s
-sys	0m0.048s
-
+real	0m8.350s
+user	0m8.298s
+sys	0m0.039s
